@@ -103,6 +103,28 @@ export function deleteEntry(id: string): boolean {
   return result.changes > 0;
 }
 
+export function updateEntry(
+  id: string,
+  fields: { summary?: string; personalTags?: string[]; publicTags?: string[] }
+): LinkEntry | null {
+  const entry = getEntryById(id);
+  if (!entry) return null;
+
+  const db = getDb();
+  const updatedAt = new Date().toISOString();
+  const summary = fields.summary !== undefined ? fields.summary : entry.summary;
+  const personalTags = fields.personalTags !== undefined ? JSON.stringify(fields.personalTags) : JSON.stringify(entry.personalTags);
+  const publicTags = fields.publicTags !== undefined ? JSON.stringify(fields.publicTags) : JSON.stringify(entry.publicTags);
+
+  db.prepare(`
+    UPDATE entries
+    SET summary = @summary, personal_tags = @personalTags, public_tags = @publicTags, updated_at = @updatedAt
+    WHERE id = @id
+  `).run({ summary, personalTags, publicTags, updatedAt, id });
+
+  return getEntryById(id);
+}
+
 export function searchEntries(query: string): LinkEntry[] {
   const db = getDb();
   const like = `%${query}%`;

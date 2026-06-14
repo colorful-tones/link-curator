@@ -248,3 +248,37 @@ button:disabled {
   border-radius: var(--radius);
   background: var(--color-surface);
 }
+
+.edit-form label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.edit-form textarea,
+.edit-form input[type="text"] {
+  display: block;
+  margin-top: 0.25rem;
+  width: 100%;
+}
+
+.edit-form textarea {
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  resize: vertical;
+}
+
+.edit-form textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.edit-form button {
+  margin-top: 0.5rem;
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, deleteEntry, getRecentEntries, searchEntries, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -179,6 +179,42 @@ describe('database', () => {
 
     it('returns false when deleting missing entry', () => {
       expect(deleteEntry('nonexistent')).toBe(false);
+    });
+  });
+
+  describe('updateEntry', () => {
+    it('updates summary', () => {
+      const entry = makeEntry({ summary: 'old summary' });
+      createEntry(entry);
+      const updated = updateEntry(entry.id, { summary: 'new summary' });
+      expect(updated).not.toBeNull();
+      expect(updated!.summary).toBe('new summary');
+      expect(getEntryById(entry.id)?.summary).toBe('new summary');
+    });
+
+    it('updates personalTags', () => {
+      const entry = makeEntry({ personalTags: ['old'] });
+      createEntry(entry);
+      const updated = updateEntry(entry.id, { personalTags: ['new', 'tags'] });
+      expect(updated!.personalTags).toEqual(['new', 'tags']);
+    });
+
+    it('updates publicTags', () => {
+      const entry = makeEntry({ publicTags: ['old'] });
+      createEntry(entry);
+      const updated = updateEntry(entry.id, { publicTags: ['public'] });
+      expect(updated!.publicTags).toEqual(['public']);
+    });
+
+    it('returns null for missing entry', () => {
+      expect(updateEntry('nonexistent', { summary: 'x' })).toBeNull();
+    });
+
+    it('updates updatedAt timestamp', () => {
+      const entry = makeEntry();
+      createEntry(entry);
+      const updated = updateEntry(entry.id, { summary: 'changed' });
+      expect(updated!.updatedAt).not.toBe(entry.updatedAt);
     });
   });
 

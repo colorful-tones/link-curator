@@ -71,6 +71,25 @@ const domain = new URL(entry.url).hostname;
           </div>
         ) : null}
 
+        <div class="detail-section">
+          <h2>Edit</h2>
+          <form method="POST" action={`/api/entries/${entry.id}/edit`} class="edit-form">
+            <label>
+              Summary
+              <textarea name="summary" rows="3">{entry.summary}</textarea>
+            </label>
+            <label>
+              Personal tags (comma-separated)
+              <input type="text" name="personalTags" value={entry.personalTags.join(', ')} />
+            </label>
+            <label>
+              Public tags (comma-separated)
+              <input type="text" name="publicTags" value={entry.publicTags.join(', ')} />
+            </label>
+            <button type="submit">Save changes</button>
+          </form>
+        </div>
+
         <div class="detail-actions">
           <a href={entry.url} target="_blank" rel="noopener noreferrer">Open source &rarr;</a>
           <a href={`/api/entries/${entry.id}/markdown`} download>Download Markdown</a>
