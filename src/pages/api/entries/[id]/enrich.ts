@@ -27,24 +27,34 @@ export const POST: APIRoute = async ({ params, redirect }) => {
   }
 
   const metadata = buildMetadataFromEntry(entry);
-  const enrichment = await enrichLink(metadata);
 
-  if (!enrichment.summary && enrichment.suggestedPersonalTags.length === 0 && enrichment.suggestedPublicTags.length === 0) {
-    // AI returned fallback — likely not configured
+  try {
+    const enrichment = await enrichLink(metadata);
+
+    if (!enrichment.summary && enrichment.suggestedPersonalTags.length === 0 && enrichment.suggestedPublicTags.length === 0) {
+      updateEntryEnrichment(id, {
+        summary: entry.summary,
+        personalTags: entry.personalTags,
+        publicTags: entry.publicTags,
+        status: 'failed',
+        errorMessage: 'AI returned empty response. The model may not support this prompt format.',
+      });
+    } else {
+      updateEntryEnrichment(id, {
+        summary: enrichment.summary,
+        personalTags: enrichment.suggestedPersonalTags,
+        publicTags: enrichment.suggestedPublicTags,
+        status: 'ok',
+        errorMessage: '',
+      });
+    }
+  } catch (err) {
     updateEntryEnrichment(id, {
       summary: entry.summary,
       personalTags: entry.personalTags,
       publicTags: entry.publicTags,
       status: 'failed',
-      errorMessage: 'AI enrichment unavailable. Check AI_BASE_URL, AI_API_KEY, and AI_MODEL.',
-    });
-  } else {
-    updateEntryEnrichment(id, {
-      summary: enrichment.summary,
-      personalTags: enrichment.suggestedPersonalTags,
-      publicTags: enrichment.suggestedPublicTags,
-      status: 'ok',
-      errorMessage: '',
+      errorMessage: (err as Error).message,
     });
   }
 

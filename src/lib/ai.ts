@@ -57,7 +57,7 @@ export async function enrichLink(metadata: LinkMetadata): Promise<LinkEnrichment
   const { baseUrl, apiKey, model } = getConfig();
 
   if (!apiKey || !baseUrl || !model) {
-    return FALLBACK;
+    throw new Error('AI not configured. Set AI_BASE_URL, AI_API_KEY, and AI_MODEL in .env to enable enrichment.');
   }
 
   try {

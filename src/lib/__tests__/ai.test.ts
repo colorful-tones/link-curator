@@ -12,6 +12,13 @@ const testMetadata: LinkMetadata = {
   contentType: 'article',
 };
 
+const EMPTY_ENRICHMENT = {
+  summary: '',
+  tags: [],
+  suggestedPersonalTags: [],
+  suggestedPublicTags: [],
+};
+
 describe('enrichLink', () => {
   beforeEach(() => {
     delete process.env.AI_BASE_URL;
@@ -19,39 +26,26 @@ describe('enrichLink', () => {
     delete process.env.AI_MODEL;
   });
 
-  it('returns fallback when AI_API_KEY is not set', async () => {
-    const result = await enrichLink(testMetadata);
-    expect(result).toEqual({
-      summary: '',
-      tags: [],
-      suggestedPersonalTags: [],
-      suggestedPublicTags: [],
-    });
+  it('throws when AI_API_KEY is not set', async () => {
+    await expect(enrichLink(testMetadata)).rejects.toThrow('AI not configured');
   });
 
-  it('returns fallback when AI_BASE_URL is not set', async () => {
+  it('throws when AI_BASE_URL is not set', async () => {
     process.env.AI_API_KEY = 'sk-test';
-    const result = await enrichLink(testMetadata);
-    expect(result.summary).toBe('');
+    await expect(enrichLink(testMetadata)).rejects.toThrow('AI not configured');
   });
 
-  it('returns fallback when AI_MODEL is not set', async () => {
+  it('throws when AI_MODEL is not set', async () => {
     process.env.AI_API_KEY = 'sk-test';
     process.env.AI_BASE_URL = 'https://api.example.com';
-    const result = await enrichLink(testMetadata);
-    expect(result.summary).toBe('');
+    await expect(enrichLink(testMetadata)).rejects.toThrow('AI not configured');
   });
 
-  it('does not throw when AI request fails', async () => {
+  it('returns fallback when AI request fails', async () => {
     process.env.AI_API_KEY = 'sk-test';
     process.env.AI_BASE_URL = 'https://does-not-exist.example.com';
     process.env.AI_MODEL = 'test-model';
 
-    await expect(enrichLink(testMetadata)).resolves.toEqual({
-      summary: '',
-      tags: [],
-      suggestedPersonalTags: [],
-      suggestedPublicTags: [],
-    });
+    await expect(enrichLink(testMetadata)).resolves.toEqual(EMPTY_ENRICHMENT);
   });
 });
