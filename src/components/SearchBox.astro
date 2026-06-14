@@ -1,0 +1,24 @@
+---
+const query = Astro.url.searchParams.get('q') || '';
+---
+
+<div class="form-group">
+  <input
+    type="text"
+    id="search-input"
+    placeholder="Search links..."
+    value={query}
+  />
+</div>
+
+<script>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim();
+      const url = q ? `/?q=${encodeURIComponent(q)}` : '/';
+      window.location.href = url;
+    });
+  }
+</script>

@@ -1,0 +1,82 @@
+---
+import { getEntryById } from '../../lib/db';
+import '../../styles/global.css';
+
+const { id } = Astro.params;
+const entry = id ? getEntryById(id) : null;
+
+if (!entry) {
+  return Astro.redirect('/');
+}
+
+const domain = new URL(entry.url).hostname;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{entry.title || 'Link'} - Link Curator</title>
+  </head>
+  <body>
+    <div class="container">
+      <header class="app-header">
+        <h1><a href="/">Link Curator</a></h1>
+      </header>
+
+      <div class="detail-card">
+        <h1>{entry.title || entry.url}</h1>
+
+        <div class="card-meta">
+          <a href={entry.url} target="_blank" rel="noopener noreferrer">{domain}</a>
+          {entry.siteName ? <span> &middot; {entry.siteName}</span> : null}
+          {entry.contentType !== 'other' ? <span> &middot; {entry.contentType}</span> : null}
+          {entry.status === 'failed' ? <span class="badge-failed">failed</span> : null}
+          <span> &middot; {new Date(entry.createdAt).toLocaleDateString()}</span>
+        </div>
+
+        {entry.status === 'failed' && entry.errorMessage ? (
+          <div class="detail-section">
+            <h2>Error</h2>
+            <p style="color:var(--color-error);font-size:0.85rem;">{entry.errorMessage}</p>
+          </div>
+        ) : null}
+
+        {entry.description ? (
+          <div class="detail-section">
+            <h2>Description</h2>
+            <p>{entry.description}</p>
+          </div>
+        ) : null}
+
+        {entry.summary ? (
+          <div class="detail-section">
+            <h2>Summary</h2>
+            <p>{entry.summary}</p>
+          </div>
+        ) : null}
+
+        {entry.personalTags.length > 0 || entry.publicTags.length > 0 ? (
+          <div class="detail-section">
+            <h2>Tags</h2>
+            <div class="tags">
+              {entry.personalTags.map(tag => (
+                <span class="tag tag-personal">{tag}</span>
+              ))}
+              {entry.publicTags.map(tag => (
+                <span class="tag tag-public">{tag}</span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div class="detail-actions">
+          <a href={entry.url} target="_blank" rel="noopener noreferrer">Open source &rarr;</a>
+          <a href={`/api/entries/${entry.id}/markdown`} download>Download Markdown</a>
+          <a href="/">&larr; Back</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

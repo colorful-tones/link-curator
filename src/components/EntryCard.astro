@@ -1,0 +1,37 @@
+---
+import type { LinkEntry } from '../lib/types';
+
+export interface Props {
+  entry: LinkEntry;
+}
+
+const { entry } = Astro.props;
+const domain = new URL(entry.url).hostname;
+---
+
+<div class="card">
+  <div class="card-title">
+    <a href={`/entries/${entry.id}`}>{entry.title || entry.url}</a>
+  </div>
+
+  <div class="card-meta">
+    <a href={entry.url} target="_blank" rel="noopener noreferrer">{domain}</a>
+    {entry.siteName ? <span> &middot; {entry.siteName}</span> : null}
+    {entry.contentType !== 'other' ? <span> &middot; {entry.contentType}</span> : null}
+    {entry.status === 'failed' ? <span class="badge-failed">failed</span> : null}
+    <span> &middot; {new Date(entry.createdAt).toLocaleDateString()}</span>
+  </div>
+
+  {entry.summary ? <div class="card-summary">{entry.summary}</div> : null}
+
+  {entry.personalTags.length > 0 || entry.publicTags.length > 0 ? (
+    <div class="tags">
+      {entry.personalTags.map(tag => (
+        <span class="tag tag-personal">{tag}</span>
+      ))}
+      {entry.publicTags.map(tag => (
+        <span class="tag tag-public">{tag}</span>
+      ))}
+    </div>
+  ) : null}
+</div>

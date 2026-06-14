@@ -1,0 +1,93 @@
+import type { APIRoute } from 'astro';
+import { normalizeUrl } from '../../lib/url';
+import { extractLinkMetadata } from '../../lib/extract-link';
+import { enrichLink } from '../../lib/ai';
+import { createEntry } from '../../lib/db';
+import type { ContentType, LinkEntry } from '../../lib/types';
+
+export const POST: APIRoute = async ({ request }) => {
+  let body: { url?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!body.url || typeof body.url !== 'string') {
+    return new Response(JSON.stringify({ error: 'Missing or invalid url' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  let normalizedUrl: string;
+  try {
+    normalizedUrl = normalizeUrl(body.url);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+
+  let title = '';
+  let description = '';
+  let summary = '';
+  let canonicalUrl: string | null = null;
+  let siteName: string | null = null;
+  let imageUrl: string | null = null;
+  let contentType: ContentType = 'other';
+  let personalTags: string[] = [];
+  let publicTags: string[] = [];
+  let status: 'ok' | 'failed' = 'ok';
+  let errorMessage = '';
+
+  try {
+    const metadata = await extractLinkMetadata(normalizedUrl);
+    title = metadata.title;
+    description = metadata.description;
+    canonicalUrl = metadata.canonicalUrl;
+    siteName = metadata.siteName;
+    imageUrl = metadata.imageUrl;
+    contentType = metadata.contentType;
+
+    const enrichment = await enrichLink(metadata);
+    summary = enrichment.summary;
+    personalTags = enrichment.suggestedPersonalTags;
+    publicTags = enrichment.suggestedPublicTags;
+  } catch (err) {
+    status = 'failed';
+    errorMessage = (err as Error).message;
+  }
+
+  const entry: LinkEntry = {
+    id,
+    url: normalizedUrl,
+    title,
+    description,
+    summary,
+    canonicalUrl,
+    siteName,
+    imageUrl,
+    contentType,
+    personalTags,
+    publicTags,
+    createdAt: now,
+    updatedAt: now,
+    status,
+    errorMessage,
+  };
+
+  createEntry(entry);
+
+  return new Response(JSON.stringify(entry), {
+    status: 201,
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
