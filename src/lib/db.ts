@@ -91,6 +91,12 @@ export function getRecentEntries(limit = 50, offset = 0): LinkEntry[] {
   return rows.map(rowToEntry);
 }
 
+export function getEntryByUrl(url: string): LinkEntry | null {
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM entries WHERE url = ?').get(url) as Record<string, unknown> | undefined;
+  return row ? rowToEntry(row) : null;
+}
+
 export function searchEntries(query: string): LinkEntry[] {
   const db = getDb();
   const like = `%${query}%`;

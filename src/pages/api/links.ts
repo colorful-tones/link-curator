@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { normalizeUrl } from '../../lib/url';
 import { extractLinkMetadata } from '../../lib/extract-link';
 import { enrichLink } from '../../lib/ai';
-import { createEntry } from '../../lib/db';
+import { createEntry, getEntryByUrl } from '../../lib/db';
 import type { ContentType, LinkEntry } from '../../lib/types';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -35,6 +35,14 @@ export const POST: APIRoute = async ({ request }) => {
 
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
+
+  const existingEntry = getEntryByUrl(normalizedUrl);
+  if (existingEntry) {
+    return new Response(JSON.stringify(existingEntry), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   let title = '';
   let description = '';
