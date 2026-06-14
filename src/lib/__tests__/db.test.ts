@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, getRecentEntries, searchEntries, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, getRecentEntries, searchEntries, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -166,6 +166,19 @@ describe('database', () => {
       const entry = makeEntry({ url: 'https://example.com/page-a' });
       createEntry(entry);
       expect(getEntryByUrl('https://example.com/page-b')).toBeNull();
+    });
+  });
+
+  describe('deleteEntry', () => {
+    it('returns true when deleting existing entry', () => {
+      const entry = makeEntry();
+      createEntry(entry);
+      expect(deleteEntry(entry.id)).toBe(true);
+      expect(getEntryById(entry.id)).toBeNull();
+    });
+
+    it('returns false when deleting missing entry', () => {
+      expect(deleteEntry('nonexistent')).toBe(false);
     });
   });
 

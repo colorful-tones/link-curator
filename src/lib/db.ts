@@ -97,6 +97,12 @@ export function getEntryByUrl(url: string): LinkEntry | null {
   return row ? rowToEntry(row) : null;
 }
 
+export function deleteEntry(id: string): boolean {
+  const db = getDb();
+  const result = db.prepare('DELETE FROM entries WHERE id = ?').run(id);
+  return result.changes > 0;
+}
+
 export function searchEntries(query: string): LinkEntry[] {
   const db = getDb();
   const like = `%${query}%`;

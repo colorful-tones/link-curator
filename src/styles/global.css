@@ -80,6 +80,15 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.btn-danger {
+  background: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
 .container {
   max-width: 720px;
   margin: 0 auto;

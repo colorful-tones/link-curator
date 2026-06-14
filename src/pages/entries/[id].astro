@@ -74,6 +74,9 @@ const domain = new URL(entry.url).hostname;
         <div class="detail-actions">
           <a href={entry.url} target="_blank" rel="noopener noreferrer">Open source &rarr;</a>
           <a href={`/api/entries/${entry.id}/markdown`} download>Download Markdown</a>
+          <form method="POST" action={`/api/entries/${entry.id}/delete`} style="display:inline" onsubmit="return confirm('Delete this entry?')">
+            <button type="submit" class="btn-danger">Delete</button>
+          </form>
           <a href="/">&larr; Back</a>
         </div>
       </div>
