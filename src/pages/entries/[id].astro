@@ -65,10 +65,10 @@ const domain = new URL(entry.url).hostname;
             <h2>Tags</h2>
             <div class="tags">
               {entry.personalTags.map(tag => (
-                <span class="tag tag-personal">{tag}</span>
+                <a href={`/tags/${tag}`} class="tag tag-personal">{tag}</a>
               ))}
               {entry.publicTags.map(tag => (
-                <span class="tag tag-public">{tag}</span>
+                <a href={`/tags/${tag}`} class="tag tag-public">{tag}</a>
               ))}
             </div>
           </div>

@@ -27,10 +27,10 @@ const domain = new URL(entry.url).hostname;
   {entry.personalTags.length > 0 || entry.publicTags.length > 0 ? (
     <div class="tags">
       {entry.personalTags.map(tag => (
-        <span class="tag tag-personal">{tag}</span>
+        <a href={`/tags/${tag}`} class="tag tag-personal">{tag}</a>
       ))}
       {entry.publicTags.map(tag => (
-        <span class="tag tag-public">{tag}</span>
+        <a href={`/tags/${tag}`} class="tag tag-public">{tag}</a>
       ))}
     </div>
   ) : null}
