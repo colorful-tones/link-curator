@@ -125,6 +125,30 @@ export function updateEntry(
   return getEntryById(id);
 }
 
+export function updateEntryEnrichment(
+  id: string,
+  fields: { summary: string; personalTags: string[]; publicTags: string[]; status: EntryStatus; errorMessage: string }
+): LinkEntry | null {
+  const db = getDb();
+  const updatedAt = new Date().toISOString();
+  const result = db.prepare(`
+    UPDATE entries
+    SET summary = @summary, personal_tags = @personalTags, public_tags = @publicTags,
+        status = @status, error_message = @errorMessage, updated_at = @updatedAt
+    WHERE id = @id
+  `).run({
+    summary: fields.summary,
+    personalTags: JSON.stringify(fields.personalTags),
+    publicTags: JSON.stringify(fields.publicTags),
+    status: fields.status,
+    errorMessage: fields.errorMessage,
+    updatedAt,
+    id,
+  });
+
+  return result.changes > 0 ? getEntryById(id) : null;
+}
+
 export function searchEntries(query: string): LinkEntry[] {
   const db = getDb();
   const like = `%${query}%`;

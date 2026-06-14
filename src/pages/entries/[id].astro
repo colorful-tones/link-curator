@@ -40,6 +40,9 @@ const domain = new URL(entry.url).hostname;
           <div class="detail-section">
             <h2>Error</h2>
             <p style="color:var(--color-error);font-size:0.85rem;">{entry.errorMessage}</p>
+            <form method="POST" action={`/api/entries/${entry.id}/enrich`} style="margin-top:0.75rem">
+              <button type="submit">Retry enrichment</button>
+            </form>
           </div>
         ) : null}
 
