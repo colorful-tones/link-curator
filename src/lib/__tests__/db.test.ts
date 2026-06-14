@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -215,6 +215,37 @@ describe('database', () => {
       createEntry(entry);
       const updated = updateEntry(entry.id, { summary: 'changed' });
       expect(updated!.updatedAt).not.toBe(entry.updatedAt);
+    });
+  });
+
+  describe('getEntriesByTag', () => {
+    it('returns entries with a matching personal tag', () => {
+      const entry = makeEntry({ personalTags: ['react', 'typescript'] });
+      createEntry(entry);
+
+      const results = getEntriesByTag('react');
+      expect(results.some(e => e.id === entry.id)).toBe(true);
+    });
+
+    it('returns entries with a matching public tag', () => {
+      const entry = makeEntry({ publicTags: ['tutorial', 'guide'] });
+      createEntry(entry);
+
+      const results = getEntriesByTag('tutorial');
+      expect(results.some(e => e.id === entry.id)).toBe(true);
+    });
+
+    it('returns empty array when no entries match', () => {
+      const results = getEntriesByTag('nonexistent-tag-xyz');
+      expect(results).toEqual([]);
+    });
+
+    it('is case-insensitive for LIKE matching', () => {
+      const entry = makeEntry({ personalTags: ['TypeScript'] });
+      createEntry(entry);
+
+      const results = getEntriesByTag('typescript');
+      expect(results.some(e => e.id === entry.id)).toBe(true);
     });
   });
 

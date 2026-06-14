@@ -161,6 +161,18 @@ export function searchEntries(query: string): LinkEntry[] {
   return rows.map(rowToEntry);
 }
 
+export function getEntriesByTag(tag: string): LinkEntry[] {
+  const db = getDb();
+  const like = `%${tag}%`;
+  const rows = db.prepare(`
+    SELECT * FROM entries
+    WHERE personal_tags LIKE ? OR public_tags LIKE ?
+    ORDER BY created_at DESC
+    LIMIT 100
+  `).all(like, like) as Record<string, unknown>[];
+  return rows.map(rowToEntry);
+}
+
 export function closeDb(): void {
   if (_db) {
     _db.close();
