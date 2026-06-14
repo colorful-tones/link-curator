@@ -1,12 +1,29 @@
 ---
-import { getRecentEntries, searchEntries } from '../lib/db';
+import { getRecentEntries, getEntryCount, searchEntries } from '../lib/db';
 import LinkForm from '../components/LinkForm.astro';
 import SearchBox from '../components/SearchBox.astro';
 import EntryCard from '../components/EntryCard.astro';
+import Pagination from '../components/Pagination.astro';
 import '../styles/global.css';
 
+const PAGE_SIZE = 20;
 const query = Astro.url.searchParams.get('q') || '';
-const entries = query ? searchEntries(query) : getRecentEntries(50);
+const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10));
+
+let entries: ReturnType<typeof getRecentEntries>;
+let totalEntries: number;
+let totalPages: number;
+
+if (query) {
+  entries = searchEntries(query);
+  totalEntries = entries.length;
+  totalPages = 1;
+} else {
+  totalEntries = getEntryCount();
+  totalPages = Math.max(1, Math.ceil(totalEntries / PAGE_SIZE));
+  const offset = (page - 1) * PAGE_SIZE;
+  entries = getRecentEntries(PAGE_SIZE, offset);
+}
 ---
 
 <html lang="en">
@@ -32,7 +49,10 @@ const entries = query ? searchEntries(query) : getRecentEntries(50);
           {query ? <p>No results for "{query}"</p> : <p>No links yet. Paste a URL above to get started.</p>}
         </div>
       ) : (
-        entries.map(entry => <EntryCard entry={entry} />)
+        <>
+          {entries.map(entry => <EntryCard entry={entry} />)}
+          <Pagination page={page} totalPages={totalPages} baseUrl={query ? `/?q=${query}` : '/'} />
+        </>
       )}
     </div>
   </body>
