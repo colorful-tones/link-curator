@@ -7,17 +7,12 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     return new Response('Missing id', { status: 400 });
   }
 
-  let body: { summary?: string; personalTags?: string; publicTags?: string };
-  try {
-    body = await request.json();
-  } catch {
-    const formData = await request.formData();
-    body = {
-      summary: formData.get('summary')?.toString(),
-      personalTags: formData.get('personalTags')?.toString(),
-      publicTags: formData.get('publicTags')?.toString(),
-    };
-  }
+  const formData = await request.formData();
+  const body = {
+    summary: formData.get('summary')?.toString(),
+    personalTags: formData.get('personalTags')?.toString(),
+    publicTags: formData.get('publicTags')?.toString(),
+  };
 
   const personalTags = body.personalTags
     ? body.personalTags.split(',').map((t) => t.trim()).filter(Boolean)
