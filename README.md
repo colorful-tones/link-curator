@@ -209,8 +209,8 @@ src/
 - Browser extension
 - Vector search
 - Bookmark import
-- Manual edit/delete UI
-- Retry enrichment UI
+- Tag pages
+- JSON export
 
 Those can come later if the local workflow proves useful.
 
@@ -218,12 +218,8 @@ Those can come later if the local workflow proves useful.
 
 Near-term:
 
-- Improve search UX
-- Add duplicate URL handling
-- Add manual editing for summary and tags
-- Add delete action
-- Add retry enrichment for failed entries
 - Add Markdown export destination options
+- Add bulk import
 
 Later:
 
@@ -236,41 +232,29 @@ Later:
 
 ## Contributing
 
-This is early. Keep changes small and boring.
-
-Before opening a PR or committing a larger change, run:
-
-```sh
-pnpm test
-pnpm typecheck
-pnpm build
-```
-
-Prefer focused commits using Conventional Commit messages, for example:
-
-```txt
-feat: add duplicate link detection
-fix: reject unsupported URL protocols
-docs: document markdown export
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-No license file has been added yet.
-
-If this becomes a public open-source project, add a license before sharing widely. MIT is the likely default unless the project needs something stricter.
+MIT — see [LICENSE](LICENSE).
 
 ## Changelog
 
-### Unreleased
+### v0.1.0
 
-- Added local-first Astro server setup.
-- Added SQLite-backed link storage.
+- Added local-first Astro server setup with `@astrojs/node`.
+- Added SQLite-backed link storage with `better-sqlite3`.
 - Added URL validation for safe `http` and `https` links.
 - Added metadata extraction from HTML and Open Graph tags.
-- Added optional OpenAI-compatible AI enrichment.
+- Added optional OpenAI-compatible AI enrichment with safe fallback.
 - Added separate personal and public tag fields.
-- Added Markdown export for saved entries.
+- Added Markdown export for saved entries with YAML frontmatter.
 - Added home page with link submission, recent entries, and search.
-- Added entry detail pages.
-- Added tests for URL validation, metadata parsing, AI fallback, Markdown export, and database behavior.
+- Added entry detail pages with Open Graph metadata display.
+- Added duplicate URL detection to prevent re-saving the same link.
+- Added entry deletion from detail pages.
+- Added manual editing for summary, personal tags, and public tags.
+- Added retry enrichment for failed entries.
+- Added search form with submit button and clear action.
+- Added tests for URL validation, metadata parsing, AI fallback, Markdown export, and database operations.
+- Added MIT license, contributing guide, and issue templates.
