@@ -18,6 +18,9 @@ MVP foundation is in place:
 - Search title, description, URL, summary, personal tags, and public tags
 - View entry detail pages
 - Export entries to Markdown
+- Save entries directly to an Obsidian vault
+- Browse entries by tag on `/tags/:tag`
+- Paginate entries on the home page
 
 ## Tech stack
 
@@ -209,7 +212,6 @@ src/
 - Browser extension
 - Vector search
 - Bookmark import
-- Tag pages
 - JSON export
 
 Those can come later if the local workflow proves useful.
@@ -224,9 +226,7 @@ Near-term:
 Later:
 
 - Bookmark import
-- Tag pages
 - JSON export
-- Obsidian-friendly export flows
 - Optional browser extension
 - Optional hosted mode
 
@@ -239,6 +239,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 MIT — see [LICENSE](LICENSE).
 
 ## Changelog
+
+### v0.2.0
+
+- Added Obsidian vault export: entries can be written directly to a configured Obsidian vault path via a "Save to Obsidian" button on the detail page.
+- Added tag pages at `/tags/:tag` for browsing all entries sharing a tag.
+- Made tags clickable links across entry cards and detail pages.
+- Added pagination on the home page with 20 entries per page.
+- Added `getEntryCount` and `getEntriesByTag` database queries.
 
 ### v0.1.1
 
