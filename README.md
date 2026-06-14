@@ -240,6 +240,12 @@ MIT — see [LICENSE](LICENSE).
 
 ## Changelog
 
+### v0.1.1
+
+- Fixed `.env` not being loaded into `process.env`, which prevented AI enrichment from reading `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` at runtime.
+- Fixed AI config detection: entries are now properly marked as `failed` when AI is not configured, so the UI shows a retry prompt instead of silently skipping enrichment.
+- Removed the MVP plan document now that it has been fully implemented.
+
 ### v0.1.0
 
 - Added local-first Astro server setup with `@astrojs/node`.
