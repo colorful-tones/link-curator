@@ -3,22 +3,37 @@ const query = Astro.url.searchParams.get('q') || '';
 ---
 
 <div class="form-group">
-  <input
-    type="text"
-    id="search-input"
-    placeholder="Search links..."
-    value={query}
-  />
+  <form method="GET" action="/" style="display:contents">
+    <input
+      type="text"
+      name="q"
+      placeholder="Search links..."
+      value={query}
+    />
+    <button type="submit">Search</button>
+  </form>
+  {query && (
+    <a href="/" class="clear-search" title="Clear search">✕</a>
+  )}
 </div>
 
-<script>
-  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      const q = searchInput.value.trim();
-      const url = q ? `/?q=${encodeURIComponent(q)}` : '/';
-      window.location.href = url;
-    });
+<style>
+  .clear-search {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    text-decoration: none;
+    flex-shrink: 0;
   }
-</script>
+  .clear-search:hover {
+    background: #f3f3f3;
+    text-decoration: none;
+  }
+</style>
