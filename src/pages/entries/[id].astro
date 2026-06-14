@@ -94,8 +94,14 @@ const domain = new URL(entry.url).hostname;
         </div>
 
         <div class="detail-actions">
+        {Astro.url.searchParams.get('exported') ? (
+          <p class="success-text" style="margin-top:1rem">Saved to Obsidian vault.</p>
+        ) : null}
           <a href={entry.url} target="_blank" rel="noopener noreferrer">Open source &rarr;</a>
           <a href={`/api/entries/${entry.id}/markdown`} download>Download Markdown</a>
+          <form method="POST" action={`/api/entries/${entry.id}/export-to-vault`} style="display:inline">
+            <button type="submit">Save to Obsidian</button>
+          </form>
           <form method="POST" action={`/api/entries/${entry.id}/delete`} style="display:inline" onsubmit="return confirm('Delete this entry?')">
             <button type="submit" class="btn-danger">Delete</button>
           </form>
