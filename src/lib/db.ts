@@ -173,6 +173,12 @@ export function getEntriesByTag(tag: string): LinkEntry[] {
   return rows.map(rowToEntry);
 }
 
+export function getEntryCount(): number {
+  const db = getDb();
+  const row = db.prepare('SELECT COUNT(*) as count FROM entries').get() as { count: number };
+  return row.count;
+}
+
 export function closeDb(): void {
   if (_db) {
     _db.close();
