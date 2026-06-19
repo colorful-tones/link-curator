@@ -1,5 +1,6 @@
 ---
 import { getEntriesByTag } from '../../lib/db';
+import BaseHead from '../../components/BaseHead.astro';
 import EntryCard from '../../components/EntryCard.astro';
 import '../../styles/global.css';
 
@@ -9,9 +10,7 @@ const entries = tag ? getEntriesByTag(tag) : [];
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>{tag} - Link Curator</title>
+    <BaseHead title={`${tag} - Link Curator`} />
   </head>
   <body>
     <div class="container">
