@@ -1,5 +1,6 @@
 ---
 import { getEntryById } from '../../lib/db';
+import BaseHead from '../../components/BaseHead.astro';
 import '../../styles/global.css';
 
 const { id } = Astro.params;
@@ -14,10 +15,7 @@ const domain = new URL(entry.url).hostname;
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>{entry.title || 'Link'} - Link Curator</title>
+    <BaseHead title={`${entry.title || 'Link'} - Link Curator`} description={entry.description || entry.summary || ''} />
   </head>
   <body>
     <div class="container">
