@@ -1,4 +1,4 @@
-export type ContentType = 'article' | 'video' | 'podcast' | 'documentation' | 'tool' | 'social' | 'repo' | 'other';
+export type ContentType = 'article' | 'video' | 'podcast' | 'documentation' | 'tool' | 'social' | 'repo' | 'paper' | 'newsletter' | 'other';
 
 export interface LinkMetadata {
   url: string;
