@@ -15,6 +15,11 @@ export function mapContentType(ogType: string | null, sourceUrl: string): Conten
     return 'repo';
   }
 
+  // Detect paper/newsletter by URL patterns
+  const url = sourceUrl.toLowerCase();
+  if (/arxiv\.org\/abs\//.test(url) || /arxiv\.org\/pdf\//.test(url)) return 'paper';
+  if (/substack\.com\//.test(url) || /beehiiv\.com\//.test(url)) return 'newsletter';
+
   return 'other';
 }
 
