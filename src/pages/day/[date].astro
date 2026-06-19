@@ -1,0 +1,52 @@
+---
+import { getEntriesByDate } from '../../lib/db';
+import BaseHead from '../../components/BaseHead.astro';
+import EntryCard from '../../components/EntryCard.astro';
+import '../../styles/global.css';
+
+const { date } = Astro.params;
+
+// Validate date format
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+if (!date || !dateRegex.test(date)) {
+  return Astro.redirect('/');
+}
+
+const entries = getEntriesByDate(date);
+
+// Format date for display
+const displayDate = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={`${displayDate} - Link Curator`} />
+  </head>
+  <body>
+    <div class="container">
+      <header class="app-header">
+        <h1><a href="/">Link Curator</a></h1>
+      </header>
+
+      <p style="margin-bottom:1rem">
+        {displayDate} &middot; {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+      </p>
+
+      {entries.length === 0 ? (
+        <div class="empty-state">
+          <p>No entries saved on {displayDate}.</p>
+          <p><a href="/">Back to home</a></p>
+        </div>
+      ) : (
+        entries.map(entry => <EntryCard entry={entry} />)
+      )}
+
+      <p style="margin-top:1.5rem"><a href="/" class="back-link">&larr; Back to all entries</a></p>
+    </div>
+  </body>
+</html>
