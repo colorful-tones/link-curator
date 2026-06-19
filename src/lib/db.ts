@@ -179,6 +179,57 @@ export function getEntryCount(): number {
   return row.count;
 }
 
+export function getEntriesByDate(date: string): LinkEntry[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT * FROM entries
+    WHERE date(created_at) = ?
+    ORDER BY created_at DESC
+    LIMIT 100
+  `).all(date) as Record<string, unknown>[];
+  return rows.map(rowToEntry);
+}
+
+export interface LinkStats {
+  totalEntries: number;
+  totalDays: number;
+  byType: Record<string, number>;
+  topTags: { tag: string; count: number }[];
+}
+
+export function getStats(): LinkStats {
+  const db = getDb();
+
+  const totalEntries = (db.prepare('SELECT COUNT(*) as count FROM entries').get() as { count: number }).count;
+
+  const totalDays = (db.prepare('SELECT COUNT(DISTINCT date(created_at)) as count FROM entries').get() as { count: number }).count;
+
+  const typeRows = db.prepare('SELECT content_type, COUNT(*) as count FROM entries GROUP BY content_type ORDER BY count DESC').all() as { content_type: string; count: number }[];
+  const byType: Record<string, number> = {};
+  for (const row of typeRows) {
+    byType[row.content_type] = row.count;
+  }
+
+  const tagCounts = new Map<string, number>();
+  const tagRows = db.prepare('SELECT personal_tags, public_tags FROM entries').all() as { personal_tags: string; public_tags: string }[];
+  for (const row of tagRows) {
+    try {
+      const personal: string[] = JSON.parse(row.personal_tags);
+      for (const tag of personal) tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+    } catch { /* skip malformed tags */ }
+    try {
+      const publicTags: string[] = JSON.parse(row.public_tags);
+      for (const tag of publicTags) tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+    } catch { /* skip malformed tags */ }
+  }
+  const topTags = [...tagCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 30)
+    .map(([tag, count]) => ({ tag, count }));
+
+  return { totalEntries, totalDays, byType, topTags };
+}
+
 export function closeDb(): void {
   if (_db) {
     _db.close();
