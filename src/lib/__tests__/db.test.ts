@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -271,6 +271,71 @@ describe('database', () => {
       const found = getEntryById(entry.id);
       expect(found?.personalTags).toEqual(['to-read', 'reference']);
       expect(found?.publicTags).toEqual(['javascript', 'testing']);
+    });
+  });
+
+  describe('getStats', () => {
+    it('returns zero counts when no entries exist', () => {
+      const stats = getStats();
+      expect(stats.totalEntries).toBeGreaterThanOrEqual(0);
+      expect(stats.totalDays).toBeGreaterThanOrEqual(0);
+      expect(typeof stats.byType).toBe('object');
+      expect(Array.isArray(stats.topTags)).toBe(true);
+    });
+
+    it('counts entries by content type', () => {
+      createEntry(makeEntry({ contentType: 'article' }));
+      createEntry(makeEntry({ contentType: 'article' }));
+      createEntry(makeEntry({ contentType: 'tool' }));
+
+      const stats = getStats();
+      expect(stats.byType['article']).toBeGreaterThanOrEqual(2);
+      expect(stats.byType['tool']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('counts tag frequency from both personal and public tags', () => {
+      createEntry(makeEntry({ personalTags: ['react'], publicTags: ['tutorial'] }));
+      createEntry(makeEntry({ personalTags: ['react', 'typescript'], publicTags: [] }));
+
+      const stats = getStats();
+      const reactTag = stats.topTags.find((t: { tag: string; count: number }) => t.tag === 'react');
+      expect(reactTag).toBeDefined();
+      expect(reactTag!.count).toBeGreaterThanOrEqual(2);
+    });
+
+    it('returns top tags sorted by frequency', () => {
+      createEntry(makeEntry({ personalTags: ['popular'] }));
+      createEntry(makeEntry({ personalTags: ['popular'] }));
+      createEntry(makeEntry({ personalTags: ['popular'] }));
+      createEntry(makeEntry({ personalTags: ['rare'] }));
+
+      const stats = getStats();
+      expect(stats.topTags[0].count).toBeGreaterThanOrEqual(stats.topTags[stats.topTags.length - 1].count);
+    });
+  });
+
+  describe('getEntriesByDate', () => {
+    it('returns entries for a specific date', () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const entry = makeEntry({ createdAt: today + 'T12:00:00.000Z' });
+      createEntry(entry);
+
+      const results = getEntriesByDate(today);
+      expect(results.some(e => e.id === entry.id)).toBe(true);
+    });
+
+    it('returns empty array when no entries match the date', () => {
+      const results = getEntriesByDate('2020-01-01');
+      expect(results).toEqual([]);
+    });
+
+    it('does not return entries from a different date', () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      createEntry(makeEntry({ createdAt: today + 'T12:00:00.000Z' }));
+
+      const results = getEntriesByDate(yesterday);
+      expect(results).toEqual([]);
     });
   });
 });
