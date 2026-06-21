@@ -236,3 +236,20 @@ export function closeDb(): void {
     _db = null;
   }
 }
+
+export interface CalendarDay {
+  date: string;
+  count: number;
+}
+
+export function getCalendarData(yearMonth: string): CalendarDay[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT date(created_at) as date, COUNT(*) as count
+    FROM entries
+    WHERE strftime('%Y-%m', created_at) = ?
+    GROUP BY date(created_at)
+    ORDER BY date
+  `).all(yearMonth) as { date: string; count: number }[];
+  return rows;
+}

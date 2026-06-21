@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, getCalendarData, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -336,6 +336,41 @@ describe('database', () => {
 
       const results = getEntriesByDate(yesterday);
       expect(results).toEqual([]);
+    });
+  });
+
+  describe('getCalendarData', () => {
+    it('returns empty array when no entries in month', () => {
+      const data = getCalendarData('2020-01');
+      expect(data).toEqual([]);
+    });
+
+    it('returns entry counts grouped by day', () => {
+      const today = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const day1 = today + '-15T10:00:00.000Z';
+      const day2 = today + '-16T10:00:00.000Z';
+      createEntry(makeEntry({ createdAt: day1 }));
+      createEntry(makeEntry({ createdAt: day1 }));
+      createEntry(makeEntry({ createdAt: day2 }));
+
+      const data = getCalendarData(today);
+      const d15 = data.find(d => d.date === today + '-15');
+      const d16 = data.find(d => d.date === today + '-16');
+      expect(d15).toBeDefined();
+      expect(d15!.count).toBe(2);
+      expect(d16).toBeDefined();
+      expect(d16!.count).toBe(1);
+    });
+
+    it('only returns data for the specified month', () => {
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      createEntry(makeEntry({ createdAt: thisMonth + '-01T10:00:00.000Z' }));
+      const data = getCalendarData(thisMonth);
+      expect(data.length).toBeGreaterThanOrEqual(1);
+      // Requesting a different month should not return this entry
+      const otherMonth = '2020-01';
+      const otherData = getCalendarData(otherMonth);
+      expect(otherData).toEqual([]);
     });
   });
 });
