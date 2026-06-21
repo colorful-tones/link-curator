@@ -1,0 +1,147 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title="Calendar - Link Curator" />
+    <style>
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-top: 1rem;
+      }
+      .calendar-day-header {
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+        padding: 0.5rem 0;
+      }
+      .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius);
+        background: var(--color-surface);
+        transition: background 0.15s;
+        text-decoration: none;
+        color: var(--color-text);
+        font-size: 0.85rem;
+        position: relative;
+      }
+      .calendar-day:hover {
+        background: var(--color-surface-raised);
+      }
+      .calendar-day.empty {
+        background: transparent;
+      }
+      .calendar-day.has-entries {
+        border: 1px solid var(--color-primary);
+      }
+      .calendar-day.today {
+        font-weight: bold;
+        color: var(--color-primary);
+      }
+      .day-count {
+        font-size: 0.65rem;
+        color: var(--color-text-muted);
+        font-family: var(--font-mono);
+      }
+      .calendar-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+      .calendar-nav h2 {
+        font-size: 1.1rem;
+      }
+      .calendar-nav a {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.6rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="app-header">
+        <h1><a href="/">Link Curator</a></h1>
+      </header>
+
+      <div id="calendar-app">
+        <div class="calendar-nav">
+          <a href="#" id="prev-month">&larr; Prev</a>
+          <h2 id="month-label"></h2>
+          <a href="#" id="next-month">Next &rarr;</a>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+    </div>
+
+    <script>
+      const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const today = new Date();
+      let currentYear = today.getFullYear();
+      let currentMonth = today.getMonth() + 1; // JS months 0-indexed
+
+      function monthStr() {
+        return `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+      }
+
+      function render() {
+        document.getElementById('month-label').textContent = new Date(currentYear, currentMonth - 1).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+
+        fetch(`/api/calendar-data?month=${monthStr()}`)
+          .then(r => r.json())
+          .then(({ days }) => {
+            const countMap = {};
+            days.forEach(d => { countMap[d.date] = d.count; });
+
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = DAY_NAMES.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
+
+            const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+              grid.innerHTML += '<div class="calendar-day empty"></div>';
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+              const count = countMap[dateStr] || 0;
+              const isToday = d === today.getDate() && currentMonth === today.getMonth() + 1 && currentYear === today.getFullYear();
+              const cls = ['calendar-day'];
+              if (count > 0) cls.push('has-entries');
+              if (isToday) cls.push('today');
+
+              grid.innerHTML += `<a href="/day/${dateStr}" class="${cls.join(' ')}">
+                <span>${d}</span>
+                ${count > 0 ? `<span class="day-count">${count}</span>` : ''}
+              </a>`;
+            }
+          });
+      }
+
+      document.getElementById('prev-month').addEventListener('click', e => {
+        e.preventDefault();
+        currentMonth--; if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+        render();
+      });
+      document.getElementById('next-month').addEventListener('click', e => {
+        e.preventDefault();
+        currentMonth++; if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
