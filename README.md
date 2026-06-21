@@ -2,25 +2,26 @@
 
 A local-first link curation tool built with Astro, SQLite, and AI-assisted metadata enrichment.
 
-Paste a link, save it locally, fetch useful page metadata, generate a short summary, split tags into personal and public discovery buckets, search your saved entries, and export entries as clean Markdown.
+Paste a link, save it locally, fetch useful page metadata, generate a short summary, split tags into personal and public discovery buckets, search your saved entries, browse by tag or date, explore a tag graph, and export entries as clean Markdown.
 
-The project is intentionally small right now. No auth. No hosted database. No deployment target. The first goal is a useful local workflow.
+## Features
 
-## Current status
-
-MVP foundation is in place:
-
-- Save links through the local web UI
+- Save links through the local web UI with AI-generated summaries and tags
 - Fetch page title, description, canonical URL, site name, image, and content type
-- Add AI-generated summaries and tags when AI config exists
-- Fall back safely when AI is missing or fails
-- Store entries in local SQLite
-- Search title, description, URL, summary, personal tags, and public tags
-- View entry detail pages
-- Export entries to Markdown
+- AI enrichment via OpenAI-compatible API with safe fallback and retry
+- Dual tag system: personal tags for your knowledge system, public tags for discovery
+- Search across title, description, URL, summary, and tags
+- Browse entries by tag (`/tags/:tag`) or by date (`/day/YYYY-MM-DD`)
+- Calendar view (`/calendar`) with monthly grid and entry counts
+- Interactive D3 tag graph (`/graph`) showing relationships between tags and entries
+- Stats endpoint (`/api/stats`) with tag frequency and content type distribution
+- Health check endpoint (`/api/health`)
+- Pagination on the home page (20 entries per page)
+- Per-entry Markdown export with YAML frontmatter
 - Save entries directly to an Obsidian vault
-- Browse entries by tag on `/tags/:tag`
-- Paginate entries on the home page
+- PWA support for iPhone via Safari "Add to Home Screen"
+- Accessible anywhere via Tailscale (`http://damons-macbook-pro:4321`)
+- 88 tests covering URL validation, metadata extraction, AI fallback, export, and database operations
 
 ## Tech stack
 
@@ -29,6 +30,7 @@ MVP foundation is in place:
 - SQLite via `better-sqlite3`
 - Vitest
 - `node-html-parser`
+- D3.js v7 (CDN, client-side only)
 - OpenAI-compatible chat completions for optional AI enrichment
 - pnpm
 
@@ -39,16 +41,9 @@ MVP foundation is in place:
 
 ## Setup
 
-Clone the repo:
-
 ```sh
 git clone https://github.com/colorful-tones/link-curator.git
 cd link-curator
-```
-
-Install dependencies:
-
-```sh
 pnpm install
 ```
 
@@ -66,173 +61,126 @@ AI_API_KEY=your-api-key
 AI_MODEL=gpt-4o-mini
 ```
 
-You can also point those values at a compatible open-model provider or local gateway.
-
 AI config is optional. Without it, links still save locally with fetched metadata.
+
+### iPhone + Tailscale access
+
+The Link Curator works as a standalone app on iPhone via Tailscale:
+
+1. Start the server: `HOST=0.0.0.0 pnpm dev`
+2. On iPhone Safari: `http://damons-macbook-pro:4321`
+3. Tap Share → Add to Home Screen → name it "Curator"
+
+The PWA manifest enables full-screen mode with no Safari chrome. See the full setup guide in the project vault.
+
+### Obsidian vault export
+
+To auto-write entries to an Obsidian vault, configure:
+
+```sh
+LINK_CURATOR_OBSIDIAN_VAULT=/Users/you/AI/obsidian/Hermes
+LINK_CURATOR_EXPORT_SUBDIR=Inbox
+```
+
+Entries save to `{VAULT}/{SUBDIR}/entry-title.md` with YAML frontmatter.
 
 ## Development
 
-Start the local dev server:
-
 ```sh
-pnpm dev
-```
-
-Open:
-
-```txt
-http://localhost:4321
-```
-
-Run tests:
-
-```sh
-pnpm test
-```
-
-Run typecheck:
-
-```sh
-pnpm typecheck
-```
-
-Build:
-
-```sh
-pnpm build
+pnpm dev        # start at http://localhost:4321
+pnpm test       # run 88 tests
+pnpm typecheck  # TypeScript typecheck
+pnpm build      # production build
 ```
 
 ## Local data
 
-The app stores local data in:
+The app stores data in `data/link-curator.sqlite`. Tests use `data/test/link-curator.sqlite`.
 
-```txt
-data/link-curator.sqlite
-```
-
-Tests use:
-
-```txt
-data/test/link-curator.sqlite
-```
-
-You can override the data directory with:
+Override the data directory:
 
 ```sh
 LINK_CURATOR_DATA_DIR=/absolute/path/to/data pnpm dev
 ```
 
-The `data/` directory and SQLite files are ignored by Git.
-
 ## AI enrichment
 
-The AI module uses OpenAI-compatible chat completions:
+Uses OpenAI-compatible chat completions at `POST {AI_BASE_URL}/chat/completions`.
 
-```txt
-POST {AI_BASE_URL}/chat/completions
-```
-
-Expected env vars:
-
-```txt
-AI_BASE_URL=
-AI_API_KEY=
-AI_MODEL=
-```
-
-The AI prompt asks for:
-
-- `summary`
-- `tags`
-- `suggestedPersonalTags`
-- `suggestedPublicTags`
-
-If the provider is unavailable, returns invalid JSON, or errors, the app falls back to empty AI fields and still saves the link.
+The AI prompt requests `summary`, `tags`, `suggestedPersonalTags`, and `suggestedPublicTags`. If the provider is unavailable or returns invalid JSON, the app falls back safely and still saves the link.
 
 ## Tag model
 
-Entries use two tag buckets:
+Two tag buckets per entry:
 
-- `personalTags`: tags for your knowledge system, notes, projects, and recall
-- `publicTags`: tags that help other people understand or discover the link
-
-This keeps private organization and public-facing discovery separate without adding a complex taxonomy yet.
+- `personalTags` — tags for your knowledge system, notes, projects, recall
+- `publicTags` — tags that help others understand or discover the link
 
 ## Markdown export
 
-Each entry can export as Markdown from:
-
-```txt
-/api/entries/:id/markdown
-```
-
-The export includes YAML frontmatter with:
-
-- title
-- URL
-- canonical URL
-- site name
-- created and updated timestamps
-- content type
-- personal tags
-- public tags
-
-The body includes the summary and source link.
+Each entry exports as Markdown from `/api/entries/:id/markdown` with YAML frontmatter (title, URL, canonical URL, site name, timestamps, content type, tags). The body includes the summary and source link.
 
 ## Project structure
 
-```txt
+```
 src/
   components/
-    EntryCard.astro
-    LinkForm.astro
-    SearchBox.astro
+    BaseHead.astro         # shared <head> with PWA meta tags
+    EntryCard.astro        # entry preview card
+    LinkForm.astro         # new link submission form
+    Nav.astro              # site navigation (List | Calendar | Graph)
+    Pagination.astro       # pagination controls
+    SearchBox.astro        # search input
+    TagCloud.astro         # top tags with frequency
   lib/
-    ai.ts
-    db.ts
-    extract-link.ts
-    markdown.ts
-    schema.ts
-    types.ts
-    url.ts
+    ai.ts                  # AI enrichment (OpenAI-compatible)
+    db.ts                  # SQLite queries (CRUD, stats, graph data)
+    export.ts              # Obsidian vault file writer
+    extract-link.ts        # HTML metadata extraction
+    markdown.ts            # Markdown/YAML frontmatter generation
+    schema.ts              # SQLite schema
+    types.ts               # TypeScript types
+    url.ts                 # URL validation
+    __tests__/             # test files
   pages/
-    index.astro
-    entries/[id].astro
-    api/links.ts
-    api/entries/[id]/markdown.ts
+    index.astro            # home page (list, search, tag cloud)
+    calendar.astro         # monthly calendar view
+    graph.astro            # D3 force-directed tag graph
+    day/[date].astro       # entries for a specific date
+    entries/[id].astro     # entry detail view
+    tags/[tag].astro       # entries for a specific tag
+    api/
+      links.ts             # POST /api/links
+      stats.ts             # GET /api/stats
+      health.ts            # GET /api/health
+      graph-data.ts        # GET /api/graph-data
+      calendar-data.ts     # GET /api/calendar-data?month=YYYY-MM
+      entries/[id]/
+        markdown.ts        # GET markdown export
+        edit.ts            # POST edit summary/tags
+        delete.ts          # POST delete entry
+        enrich.ts          # POST retry AI enrichment
+        export-to-vault.ts # POST save to Obsidian
+      day-json/[date].ts   # GET lightweight day entries
   styles/
     global.css
+public/
+  manifest.json            # PWA manifest
+  favicon.svg
 ```
-
-## What is intentionally not included yet
-
-- User accounts
-- Hosted sync
-- Deployment instructions
-- Browser extension
-- Vector search
-- Bookmark import
-- JSON export
-
-Those can come later if the local workflow proves useful.
 
 ## Roadmap
 
-Near-term:
+See the unified roadmap in the project vault for the full v0.3–v1.0 plan.
 
-- Add Markdown export destination options
-- Add bulk import
-
-Later:
-
-- Bookmark import
-- JSON export
-- Optional browser extension
-- Optional hosted mode
+**Next phases:**
+- **Phase 3:** Auto-export to vault on save, INDEX.md generation, entry validation
+- **Phase 4:** Hermes agent integration (auto-archive from chat), Telegram intake
+- **Phase 5:** HTML bookmark import from browser exports
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
@@ -240,35 +188,37 @@ MIT — see [LICENSE](LICENSE).
 
 ## Changelog
 
+### v0.3.0
+
+*Phase 1 + Phase 2 dashboard features*
+
+- Added health check endpoint (`/api/health`)
+- Added stats endpoint (`/api/stats`) with tag frequency and content type distribution
+- Added day-based browsing (`/day/YYYY-MM-DD`) with JSON variant
+- Added calendar view (`/calendar`) with monthly grid and entry counts
+- Added D3 force-directed tag graph (`/graph`) with drag, click navigation, and dangling-links fix
+- Added site navigation bar (List | Calendar | Graph) across all pages
+- Added tag cloud widget to homepage showing top 30 tags with frequency
+- Added PWA manifest and shared `BaseHead.astro` component for iPhone "Add to Home Screen"
+- Expanded content types to include `paper` and `newsletter`
+- Added `getStats()`, `getGraphData()`, `getCalendarData()`, `getEntriesByDate()` database queries
+- 88 tests (up from 53 in v0.2.0)
+
 ### v0.2.0
 
-- Added Obsidian vault export: entries can be written directly to a configured Obsidian vault path via a "Save to Obsidian" button on the detail page.
-- Added tag pages at `/tags/:tag` for browsing all entries sharing a tag.
-- Made tags clickable links across entry cards and detail pages.
-- Added pagination on the home page with 20 entries per page.
-- Added `getEntryCount` and `getEntriesByTag` database queries.
+- Added Obsidian vault export via "Save to Obsidian" button
+- Added tag pages at `/tags/:tag` with clickable tag links
+- Added pagination on the home page (20 entries per page)
+- Added `getEntryCount` and `getEntriesByTag` database queries
 
 ### v0.1.1
 
-- Fixed `.env` not being loaded into `process.env`, which prevented AI enrichment from reading `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` at runtime.
-- Fixed AI config detection: entries are now properly marked as `failed` when AI is not configured, so the UI shows a retry prompt instead of silently skipping enrichment.
-- Removed the MVP plan document now that it has been fully implemented.
+- Fixed `.env` loading for AI enrichment
+- Fixed AI config detection with proper `failed` status and retry prompt
 
 ### v0.1.0
 
-- Added local-first Astro server setup with `@astrojs/node`.
-- Added SQLite-backed link storage with `better-sqlite3`.
-- Added URL validation for safe `http` and `https` links.
-- Added metadata extraction from HTML and Open Graph tags.
-- Added optional OpenAI-compatible AI enrichment with safe fallback.
-- Added separate personal and public tag fields.
-- Added Markdown export for saved entries with YAML frontmatter.
-- Added home page with link submission, recent entries, and search.
-- Added entry detail pages with Open Graph metadata display.
-- Added duplicate URL detection to prevent re-saving the same link.
-- Added entry deletion from detail pages.
-- Added manual editing for summary, personal tags, and public tags.
-- Added retry enrichment for failed entries.
-- Added search form with submit button and clear action.
-- Added tests for URL validation, metadata parsing, AI fallback, Markdown export, and database operations.
-- Added MIT license, contributing guide, and issue templates.
+- Initial MVP: local-first Astro server, SQLite storage, URL validation, metadata extraction
+- AI enrichment with OpenAI-compatible API, safe fallback
+- Dual tag system, Markdown export, search, entry CRUD, duplicate detection
+- 53 tests, MIT license, contributing guide, issue templates
