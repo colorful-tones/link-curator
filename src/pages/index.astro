@@ -6,6 +6,7 @@ import SearchBox from '../components/SearchBox.astro';
 import EntryCard from '../components/EntryCard.astro';
 import Pagination from '../components/Pagination.astro';
 import TagCloud from '../components/TagCloud.astro';
+import Nav from '../components/Nav.astro';
 import '../styles/global.css';
 
 
@@ -40,6 +41,8 @@ if (query) {
       <header class="app-header">
         <h1><a href="/">Link Curator</a></h1>
       </header>
+
+      <Nav />
 
       <LinkForm />
       <SearchBox />

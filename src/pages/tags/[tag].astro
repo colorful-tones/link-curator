@@ -1,6 +1,7 @@
 ---
 import { getEntriesByTag } from '../../lib/db';
 import BaseHead from '../../components/BaseHead.astro';
+import Nav from '../../components/Nav.astro';
 import EntryCard from '../../components/EntryCard.astro';
 import '../../styles/global.css';
 
@@ -17,6 +18,8 @@ const entries = tag ? getEntriesByTag(tag) : [];
       <header class="app-header">
         <h1><a href="/">Link Curator</a></h1>
       </header>
+
+      <Nav />
 
       <p style="margin-bottom:1rem">
         Tag: <strong>{tag}</strong> &middot; {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
