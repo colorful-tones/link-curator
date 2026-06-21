@@ -105,9 +105,34 @@ LINK_CURATOR_DATA_DIR=/absolute/path/to/data pnpm dev
 
 ## AI enrichment
 
-Uses OpenAI-compatible chat completions at `POST {AI_BASE_URL}/chat/completions`.
+Uses OpenAI-compatible chat completions at `POST {AI_BASE_URL}/chat/completions`. Works with OpenAI, LM Studio, Ollama, or any OpenAI-compatible endpoint.
 
-The AI prompt requests `summary`, `tags`, `suggestedPersonalTags`, and `suggestedPublicTags`. If the provider is unavailable or returns invalid JSON, the app falls back safely and still saves the link.
+### Local LM Studio setup (recommended)
+
+Install [LM Studio](https://lmstudio.ai/), download `qwen/qwen3.5-9b` or `qwen/qwen3-14b`, start the local server, then configure `.env`:
+
+```
+AI_BASE_URL=http://localhost:1234/v1
+AI_MODEL=qwen/qwen3.5-9b
+LINK_CURATOR_MAX_TOKENS=2048
+LINK_CURATOR_REQUEST_TIMEOUT_MS=60000
+LINK_CURATOR_DISABLE_REASONING=true
+```
+
+`AI_API_KEY` can be left blank for local LM Studio. The `/no_think` prefix (enabled by `LINK_CURATOR_DISABLE_REASONING=true`) prevents Qwen models from wasting tokens on hidden reasoning. Pair with LM Studio's "Disable thinking" model setting for best results.
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AI_BASE_URL` | — | OpenAI-compatible base URL (required) |
+| `AI_MODEL` | — | Model name (required) |
+| `AI_API_KEY` | — | Optional API key — omit for local endpoints |
+| `LINK_CURATOR_MAX_TOKENS` | 500 | Max completion tokens (2048 recommended for LM Studio) |
+| `LINK_CURATOR_REQUEST_TIMEOUT_MS` | 15000 | Request timeout in ms (60000 for local models) |
+| `LINK_CURATOR_DISABLE_REASONING` | false | Prepend `/no_think` to prompt (Qwen/Claude reasoning models) |
+
+The AI prompt requests `summary`, `tags`, `suggestedPersonalTags`, and `suggestedPublicTags`. If the provider is unavailable or returns invalid JSON, the app falls back safely and still saves the link. The JSON parser handles markdown-wrapped JSON (common Qwen output).
 
 ## Tag model
 

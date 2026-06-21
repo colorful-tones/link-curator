@@ -37,10 +37,14 @@ const domain = new URL(entry.url).hostname;
           <span> &middot; {new Date(entry.createdAt).toLocaleDateString()}</span>
         </div>
 
-        {entry.status === 'failed' && entry.errorMessage ? (
+        {(entry.status === 'failed' || (entry.status === 'ok' && !entry.summary)) ? (
           <div class="detail-section">
-            <h2>Error</h2>
-            <p style="color:var(--color-error);font-size:0.85rem;">{entry.errorMessage}</p>
+            <h2>Enrichment</h2>
+            {entry.status === 'failed' && entry.errorMessage ? (
+              <p style="color:var(--color-error);font-size:0.85rem;">{entry.errorMessage}</p>
+            ) : (
+              <p style="color:var(--color-text-secondary);font-size:0.85rem;">No summary available. Run AI enrichment to generate one.</p>
+            )}
             <form method="POST" action={`/api/entries/${entry.id}/enrich`} style="margin-top:0.75rem">
               <button type="submit">Retry enrichment</button>
             </form>

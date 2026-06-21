@@ -69,6 +69,13 @@ export const POST: APIRoute = async ({ request }) => {
     summary = enrichment.summary;
     personalTags = enrichment.suggestedPersonalTags;
     publicTags = enrichment.suggestedPublicTags;
+
+    // If enrichment returned empty (LM Studio not running, model timeout, etc.),
+    // mark as failed so the retry button appears on the detail page.
+    if (!summary && personalTags.length === 0 && publicTags.length === 0) {
+      status = 'failed';
+      errorMessage = 'AI returned no summary or tags. Check that your provider is running and the model is available.';
+    }
   } catch (err) {
     status = 'failed';
     errorMessage = (err as Error).message;
