@@ -1,14 +1,19 @@
 ---
-import { getRecentEntries, getEntryCount, searchEntries } from '../lib/db';
+import { getRecentEntries, getEntryCount, searchEntries, getStats } from '../lib/db';
+import BaseHead from '../components/BaseHead.astro';
 import LinkForm from '../components/LinkForm.astro';
 import SearchBox from '../components/SearchBox.astro';
 import EntryCard from '../components/EntryCard.astro';
 import Pagination from '../components/Pagination.astro';
+import TagCloud from '../components/TagCloud.astro';
 import '../styles/global.css';
+
 
 const PAGE_SIZE = 20;
 const query = Astro.url.searchParams.get('q') || '';
 const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10));
+
+const stats = getStats();
 
 let entries: ReturnType<typeof getRecentEntries>;
 let totalEntries: number;
@@ -28,10 +33,7 @@ if (query) {
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Link Curator</title>
+    <BaseHead title="Link Curator" description="Save, enrich, search, and browse curated links." />
   </head>
   <body>
     <div class="container">
@@ -54,6 +56,8 @@ if (query) {
           <Pagination page={page} totalPages={totalPages} baseUrl={query ? `/?q=${query}` : '/'} />
         </>
       )}
+
+      {!query ? <TagCloud tags={stats.topTags} /> : null}
     </div>
   </body>
 </html>

@@ -1,0 +1,16 @@
+{
+  "name": "Link Curator",
+  "short_name": "Curator",
+  "description": "Save, enrich, search, and browse curated links with AI-powered summaries and tags.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0C10",
+  "theme_color": "#0A0C10",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
