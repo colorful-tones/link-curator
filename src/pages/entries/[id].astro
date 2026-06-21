@@ -1,6 +1,7 @@
 ---
 import { getEntryById } from '../../lib/db';
 import BaseHead from '../../components/BaseHead.astro';
+import Nav from '../../components/Nav.astro';
 import '../../styles/global.css';
 
 const { id } = Astro.params;
@@ -22,6 +23,8 @@ const domain = new URL(entry.url).hostname;
       <header class="app-header">
         <h1><a href="/">Link Curator</a></h1>
       </header>
+
+      <Nav />
 
       <div class="detail-card">
         <h1>{entry.title || entry.url}</h1>
