@@ -1,0 +1,46 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title="Tag Graph - Link Curator" />
+    <script src="https://d3js.org/d3.v7.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+    <style>
+      .graph-container { width:100%; height:calc(100vh - 120px); min-height:500px; background:var(--color-surface); border-radius:var(--radius); overflow:hidden; }
+      svg { width:100%; height:100%; }
+      .node-label { font-family:var(--font-sans); font-size:11px; fill:var(--color-text); }
+      .tag-node { fill:var(--color-primary); }
+      .entry-node { fill:var(--color-secondary); }
+      .link { stroke:var(--color-border); stroke-opacity:0.4; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="app-header">
+        <h1><a href="/">Link Curator</a></h1>
+      </header>
+
+      <h2>Tag Graph</h2>
+      <p style="color:var(--color-text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+        Drag nodes to explore. Tags in <span style="color:var(--color-primary)">blue</span>, entries in <span style="color:var(--color-secondary)">pink</span>.
+      </p>
+      <div class="graph-container" id="graph"></div>
+    </div>
+    <script>
+      fetch('/api/graph-data').then(r=>{if(!r.ok)throw new Error('Failed');return r.json()}).then(data=>{
+        const W=document.getElementById('graph').clientWidth,H=document.getElementById('graph').clientHeight;
+        const svg=d3.select('#graph').append('svg').attr('viewBox',[0,0,W,H]);
+        const sim=d3.forceSimulation(data.nodes).force('link',d3.forceLink(data.links).id(d=>d.id).distance(80)).force('charge',d3.forceManyBody().strength(-300)).force('center',d3.forceCenter(W/2,H/2)).force('collision',d3.forceCollide(d=>d.kind==='tag'?20+d.count*3:12));
+        const link=svg.append('g').selectAll('line').data(data.links).join('line').attr('class','link').attr('stroke-width',1);
+        const node=svg.append('g').selectAll('g').data(data.nodes).join('g').call(d3.drag().on('start',(e,d)=>{if(!e.active)sim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y}).on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y}).on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}));
+        node.append('circle').attr('r',d=>d.kind==='tag'?6+Math.min(d.count,10)*1.5:5).attr('class',d=>d.kind==='tag'?'tag-node':'entry-node').attr('opacity',0.85);
+        node.append('text').text(d=>d.label.length>20?d.label.slice(0,18)+'...':d.label).attr('class','node-label').attr('dx',10).attr('dy',4);
+        node.append('title').text(d=>d.kind==='entry'?d.label+'\n'+d.url||'':d.label+' ('+d.count+')');
+        node.on('click',(e,d)=>{if(d.kind==='entry'){window.open('/entries/'+d.id.replace('entry:',''),'_blank')}else{location.href='/tags/'+d.label}});
+        sim.on('tick',()=>{link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);node.attr('transform',d=>'translate('+d.x+','+d.y+')')});
+      });
+    </script>
+  </body>
+</html>
