@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, getCalendarData, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, getCalendarData, getGraphData, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -367,10 +367,40 @@ describe('database', () => {
       createEntry(makeEntry({ createdAt: thisMonth + '-01T10:00:00.000Z' }));
       const data = getCalendarData(thisMonth);
       expect(data.length).toBeGreaterThanOrEqual(1);
-      // Requesting a different month should not return this entry
       const otherMonth = '2020-01';
       const otherData = getCalendarData(otherMonth);
       expect(otherData).toEqual([]);
+    });
+  });
+
+  describe('getGraphData', () => {
+    it('returns empty arrays when no entries exist', () => {
+      const data = getGraphData();
+      expect(Array.isArray(data.nodes)).toBe(true);
+      expect(Array.isArray(data.links)).toBe(true);
+    });
+    it('creates tag nodes with counts and entry nodes', () => {
+      createEntry(makeEntry({ personalTags: ['react', 'typescript'] }));
+      createEntry(makeEntry({ personalTags: ['react'], publicTags: ['css'] }));
+      const data = getGraphData();
+      const reactNode = data.nodes.find(n => n.id === 'tag:react');
+      expect(reactNode).toBeDefined();
+      expect(reactNode!.count).toBeGreaterThanOrEqual(2);
+      const entryNodes = data.nodes.filter(n => n.kind === 'entry');
+      expect(entryNodes.length).toBeGreaterThanOrEqual(2);
+    });
+    it('creates links between tags and entries', () => {
+      createEntry(makeEntry({ personalTags: ['react'] }));
+      const data = getGraphData();
+      const entryNode = data.nodes.find(n => n.kind === 'entry');
+      expect(entryNode).toBeDefined();
+      expect(data.links.some(l => l.target === entryNode!.id && l.source === 'tag:react')).toBe(true);
+    });
+    it('filters out dangling links when singletons are removed', () => {
+      for (let i = 0; i < 16; i++) createEntry(makeEntry({ personalTags: [`unique-${i}`] }));
+      const data = getGraphData();
+      expect(data.nodes.filter(n => n.kind === 'tag' && n.id.startsWith('tag:unique-')).length).toBe(0);
+      expect(data.links.filter(l => l.source.startsWith('tag:unique-')).length).toBe(0);
     });
   });
 });

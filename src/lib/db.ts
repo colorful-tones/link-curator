@@ -253,3 +253,66 @@ export function getCalendarData(yearMonth: string): CalendarDay[] {
   `).all(yearMonth) as { date: string; count: number }[];
   return rows;
 }
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  kind: 'tag' | 'entry';
+  count: number;
+  url?: string;
+  type?: string;
+}
+
+export interface GraphLink {
+  source: string;
+  target: string;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+export function getGraphData(): GraphData {
+  const db = getDb();
+  const nodes: GraphNode[] = [];
+  const links: GraphLink[] = [];
+  const tagCounts = new Map<string, number>();
+
+  const rows = db.prepare('SELECT id, url, title, content_type, personal_tags, public_tags FROM entries').all() as {
+    id: string; url: string; title: string; content_type: string; personal_tags: string; public_tags: string;
+  }[];
+
+  for (const row of rows) {
+    const allTags: string[] = [];
+    try { allTags.push(...JSON.parse(row.personal_tags)); } catch { /* skip */ }
+    try { allTags.push(...JSON.parse(row.public_tags)); } catch { /* skip */ }
+
+    nodes.push({
+      id: `entry:${row.id}`,
+      label: row.title || row.url,
+      kind: 'entry',
+      count: 1,
+      url: row.url,
+      type: row.content_type,
+    });
+
+    for (const tag of allTags) {
+      tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      links.push({ source: `tag:${tag}`, target: `entry:${row.id}` });
+    }
+  }
+
+  const minTagCount = tagCounts.size <= 15 ? 1 : 2;
+  const allowedTagIds = new Set<string>();
+  for (const [tag, count] of tagCounts) {
+    if (count >= minTagCount) {
+      const tagId = `tag:${tag}`;
+      allowedTagIds.add(tagId);
+      nodes.push({ id: tagId, label: tag, kind: 'tag', count });
+    }
+  }
+
+  const filteredLinks = links.filter(l => allowedTagIds.has(l.source));
+  return { nodes, links: filteredLinks };
+}
