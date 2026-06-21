@@ -230,6 +230,96 @@ export function getStats(): LinkStats {
   return { totalEntries, totalDays, byType, topTags };
 }
 
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: 'entry' | 'tag';
+  count?: number;
+}
+
+export interface GraphLink {
+  source: string;
+  target: string;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+export function getGraphData(): GraphData {
+  const db = getDb();
+  const rows = db.prepare('SELECT id, personal_tags, public_tags FROM entries').all() as {
+    id: string;
+    personal_tags: string;
+    public_tags: string;
+  }[];
+
+  const tagCounts = new Map<string, number>();
+  const entryNodes: GraphNode[] = [];
+  const entryTags: Map<string, Set<string>> = new Map();
+
+  for (const row of rows) {
+    const entryId = `entry:${row.id}`;
+    entryNodes.push({ id: entryId, label: row.id, type: 'entry' });
+    const tags = new Set<string>();
+
+    try {
+      const personal: string[] = JSON.parse(row.personal_tags);
+      if (Array.isArray(personal)) {
+        for (const tag of personal) {
+          if (typeof tag === 'string') {
+            tags.add(tag);
+            tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+          }
+        }
+      }
+    } catch { /* skip malformed tags */ }
+
+    try {
+      const publicTags: string[] = JSON.parse(row.public_tags);
+      if (Array.isArray(publicTags)) {
+        for (const tag of publicTags) {
+          if (typeof tag === 'string') {
+            tags.add(tag);
+            tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+          }
+        }
+      }
+    } catch { /* skip malformed tags */ }
+
+    entryTags.set(entryId, tags);
+  }
+
+  const uniqueTagCount = tagCounts.size;
+  const includedTags = new Set<string>();
+  for (const [tag, count] of tagCounts) {
+    if (uniqueTagCount > 15) {
+      if (count >= 2) includedTags.add(tag);
+    } else {
+      includedTags.add(tag);
+    }
+  }
+
+  const tagNodes: GraphNode[] = [...includedTags].map((tag) => ({
+    id: `tag:${tag}`,
+    label: tag,
+    type: 'tag',
+    count: tagCounts.get(tag) ?? 0,
+  }));
+
+  const links: GraphLink[] = [];
+  for (const [entryId, tags] of entryTags) {
+    for (const tag of tags) {
+      if (includedTags.has(tag)) {
+        links.push({ source: `tag:${tag}`, target: entryId });
+      }
+    }
+  }
+
+  return { nodes: [...entryNodes, ...tagNodes], links };
+}
+
 export function closeDb(): void {
   if (_db) {
     _db.close();

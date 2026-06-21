@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, getGraphData, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -336,6 +336,99 @@ describe('database', () => {
 
       const results = getEntriesByDate(yesterday);
       expect(results).toEqual([]);
+    });
+  });
+
+  describe('getGraphData', () => {
+    it('returns empty nodes and links when no entries exist', () => {
+      const graph = getGraphData();
+      expect(graph.nodes).toEqual([]);
+      expect(graph.links).toEqual([]);
+    });
+
+    it('creates entry nodes with entry: prefix', () => {
+      createEntry(makeEntry({ id: 'g1' }));
+      createEntry(makeEntry({ id: 'g2' }));
+      const graph = getGraphData();
+      const entryNodes = graph.nodes.filter((n) => n.type === 'entry');
+      expect(entryNodes).toHaveLength(2);
+      expect(entryNodes.map((n) => n.id).sort()).toEqual(['entry:g1', 'entry:g2']);
+    });
+
+    it('creates tag nodes with tag: prefix and counts', () => {
+      createEntry(makeEntry({ personalTags: ['react', 'ts'], publicTags: ['web'] }));
+      createEntry(makeEntry({ personalTags: ['react'], publicTags: ['web'] }));
+      const graph = getGraphData();
+      const tagNodes = graph.nodes.filter((n) => n.type === 'tag');
+      const reactTag = tagNodes.find((n) => n.id === 'tag:react');
+      expect(reactTag).toBeDefined();
+      expect(reactTag!.count).toBe(2);
+      const webTag = tagNodes.find((n) => n.id === 'tag:web');
+      expect(webTag).toBeDefined();
+      expect(webTag!.count).toBe(2);
+    });
+
+    it('creates links from tags to entries', () => {
+      createEntry(makeEntry({ id: 'e1', personalTags: ['design'] }));
+      const graph = getGraphData();
+      expect(graph.links).toHaveLength(1);
+      expect(graph.links[0]).toEqual({ source: 'tag:design', target: 'entry:e1' });
+    });
+
+    it('creates links for both personal and public tags', () => {
+      createEntry(makeEntry({ id: 'e1', personalTags: ['p-tag'], publicTags: ['u-tag'] }));
+      const graph = getGraphData();
+      const sources = graph.links.map((l) => l.source).sort();
+      expect(sources).toEqual(['tag:p-tag', 'tag:u-tag']);
+    });
+
+    it('includes all tags when unique tag count is 15 or fewer', () => {
+      const tags = Array.from({ length: 15 }, (_, i) => `tag-${i}`);
+      createEntry(makeEntry({ personalTags: tags }));
+      createEntry(makeEntry({ personalTags: [tags[0]] })); // tag-0 appears twice, rest once
+      const graph = getGraphData();
+      const tagNodes = graph.nodes.filter((n) => n.type === 'tag');
+      expect(tagNodes).toHaveLength(15); // all included since <=15 unique
+    });
+
+    it('filters out single-use tags when unique tag count exceeds 15', () => {
+      // Create 16 unique tags, only first 2 appear twice
+      const uniqueTags = Array.from({ length: 16 }, (_, i) => `uniq-${i}`);
+      createEntry(makeEntry({ personalTags: [uniqueTags[0], uniqueTags[1], ...uniqueTags.slice(2)] }));
+      createEntry(makeEntry({ personalTags: [uniqueTags[0], uniqueTags[1]] }));
+      const graph = getGraphData();
+      const tagNodes = graph.nodes.filter((n) => n.type === 'tag');
+      const tagIds = tagNodes.map((n) => n.id);
+      expect(tagIds).toContain('tag:uniq-0');
+      expect(tagIds).toContain('tag:uniq-1');
+      expect(tagIds).not.toContain('tag:uniq-2');
+      expect(tagIds).not.toContain('tag:uniq-15');
+    });
+
+    it('does not create dangling links to filtered-out tags', () => {
+      const uniqueTags = Array.from({ length: 16 }, (_, i) => `dangle-${i}`);
+      createEntry(makeEntry({ personalTags: [uniqueTags[0], ...uniqueTags.slice(1)] }));
+      const graph = getGraphData();
+      const includedTagIds = new Set(
+        graph.nodes.filter((n) => n.type === 'tag').map((n) => n.id)
+      );
+      for (const link of graph.links) {
+        expect(includedTagIds.has(link.source)).toBe(true);
+      }
+    });
+
+    it('does not throw on malformed tag JSON', () => {
+      createEntry(makeEntry({ id: 'malformed', personalTags: ['ok-tag'], publicTags: [] }));
+      const graph = getGraphData();
+      expect(graph.nodes.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('returns stable node and link arrays', () => {
+      createEntry(makeEntry({ id: 'stab-1', personalTags: ['stable'] }));
+      const graph1 = getGraphData();
+      const graph2 = getGraphData();
+      expect(graph1.nodes).toEqual(graph2.nodes);
+      expect(graph1.links).toEqual(graph2.links);
     });
   });
 });
