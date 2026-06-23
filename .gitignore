@@ -27,3 +27,7 @@ data/
 
 # jetbrains setting folder
 .idea/
+
+# AI
+.ai/
+AGENTS.md
