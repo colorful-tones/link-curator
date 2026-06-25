@@ -91,6 +91,12 @@ export function getRecentEntries(limit = 50, offset = 0): LinkEntry[] {
   return rows.map(rowToEntry);
 }
 
+export function getAllEntriesForIndex(): LinkEntry[] {
+  const db = getDb();
+  const rows = db.prepare('SELECT * FROM entries ORDER BY created_at DESC').all() as Record<string, unknown>[];
+  return rows.map(rowToEntry);
+}
+
 export function getEntryByUrl(url: string): LinkEntry | null {
   const db = getDb();
   const row = db.prepare('SELECT * FROM entries WHERE url = ?').get(url) as Record<string, unknown> | undefined;

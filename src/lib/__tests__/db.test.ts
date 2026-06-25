@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, getCalendarData, getGraphData, closeDb } from '../db';
+import { createEntry, getEntryById, getEntryByUrl, deleteEntry, updateEntry, getRecentEntries, getAllEntriesForIndex, searchEntries, getEntriesByTag, getEntryCount, getStats, getEntriesByDate, getCalendarData, getGraphData, closeDb } from '../db';
 import type { LinkEntry } from '../types';
 import { CREATE_ENTRIES_TABLE, CREATE_ENTRIES_URL_INDEX, CREATE_ENTRIES_CREATED_AT_INDEX } from '../schema';
 import fs from 'node:fs';
@@ -96,6 +96,34 @@ describe('database', () => {
       }
       const recent = getRecentEntries(10, 2);
       expect(recent.length).toBe(1);
+    });
+  });
+
+  describe('getAllEntriesForIndex', () => {
+    it('returns empty array when no entries exist', () => {
+      expect(getAllEntriesForIndex()).toEqual([]);
+    });
+
+    it('returns all entries in reverse chronological order', () => {
+      const entry1 = makeEntry({ id: 'index-1', createdAt: '2024-01-01T00:00:00.000Z' });
+      const entry2 = makeEntry({ id: 'index-2', createdAt: '2024-01-02T00:00:00.000Z' });
+      const entry3 = makeEntry({ id: 'index-3', createdAt: '2024-01-03T00:00:00.000Z' });
+      createEntry(entry1);
+      createEntry(entry2);
+      createEntry(entry3);
+
+      const all = getAllEntriesForIndex();
+      expect(all.length).toBe(3);
+      expect(all[0].id).toBe('index-3');
+      expect(all[1].id).toBe('index-2');
+      expect(all[2].id).toBe('index-1');
+    });
+
+    it('is not capped at the getRecentEntries default of 50', () => {
+      for (let i = 0; i < 60; i++) {
+        createEntry(makeEntry({ id: `cap-${i}`, createdAt: `2024-01-${String(i + 1).padStart(2, '0')}T00:00:00.000Z` }));
+      }
+      expect(getAllEntriesForIndex().length).toBe(60);
     });
   });
 

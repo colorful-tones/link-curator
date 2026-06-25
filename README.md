@@ -19,9 +19,10 @@ Paste a link, save it locally, fetch useful page metadata, generate a short summ
 - Pagination on the home page (20 entries per page)
 - Per-entry Markdown export with YAML frontmatter
 - Save entries directly to an Obsidian vault
+- Collection index endpoint (`/api/index-md`) returns a Markdown index of all saved links, newest-first
 - PWA support for iPhone via Safari "Add to Home Screen"
 - Accessible anywhere via Tailscale (`http://damons-macbook-pro:4321`)
-- 88 tests covering URL validation, metadata extraction, AI fallback, export, and database operations
+- 106 tests covering URL validation, metadata extraction, AI fallback, export, index generation, and database operations
 
 ## Tech stack
 
@@ -90,7 +91,7 @@ Auto-export is off by default. Manual export from an entry page still only needs
 
 ```sh
 pnpm dev        # start at http://localhost:4321
-pnpm test       # run 88 tests
+pnpm test       # run 106 tests
 pnpm typecheck  # TypeScript typecheck
 pnpm build      # production build
 ```
@@ -147,6 +148,10 @@ Two tag buckets per entry:
 
 Each entry exports as Markdown from `/api/entries/:id/markdown` with YAML frontmatter (title, URL, canonical URL, site name, timestamps, content type, tags). The body includes the summary and source link.
 
+## Collection index
+
+`GET /api/index-md` returns a single Markdown document listing every saved link, newest-first. Each entry shows its title as a link, URL, canonical URL when available, content type, personal and public tags, added date, and summary. An empty collection returns a short "No entries yet" document instead of an empty response. The endpoint serves `text/markdown` and offers `INDEX.md` as a download filename.
+
 ## Project structure
 
 ```
@@ -182,6 +187,7 @@ src/
       health.ts            # GET /api/health
       graph-data.ts        # GET /api/graph-data
       calendar-data.ts     # GET /api/calendar-data?month=YYYY-MM
+      index-md.ts          # GET collection index as Markdown
       entries/[id]/
         markdown.ts        # GET markdown export
         edit.ts            # POST edit summary/tags
@@ -230,6 +236,16 @@ MIT — see [LICENSE](LICENSE).
 - Expanded content types to include `paper` and `newsletter`
 - Added `getStats()`, `getGraphData()`, `getCalendarData()`, `getEntriesByDate()` database queries
 - 88 tests (up from 53 in v0.2.0)
+
+### v0.3.1
+
+*Phase 3 Markdown bridge*
+
+- Added opt-in Obsidian auto-export on save via `LINK_CURATOR_AUTO_EXPORT=true`
+- Hardened vault export path handling against `../`, symlink, and nested symlink escapes
+- Added collection index endpoint (`/api/index-md`) returning a Markdown index of all saved links, newest-first
+- Added `getAllEntriesForIndex()` database query
+- 106 tests (up from 88 in v0.3.0)
 
 ### v0.2.0
 
