@@ -227,6 +227,15 @@ MIT, see [LICENSE](LICENSE).
 
 ## Changelog
 
+### v0.3.2
+
+- Added shared Nav component to calendar and graph pages (was missing from both)
+- Improved calendar cell spacing from 4px to 8px gap
+- Added visible borders to calendar day cells for a clearer grid
+- Styled entry counts as badge pills instead of inline text
+- Fixed Astro scoped styles not applying to client-generated calendar cells by using `is:global`
+- 117 tests (unchanged from v0.3.1)
+
 ### v0.3.1
 
 - Added opt-in Obsidian auto-export on save via `LINK_CURATOR_AUTO_EXPORT=true`

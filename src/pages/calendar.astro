@@ -1,16 +1,17 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
+import Nav from '../components/Nav.astro';
 import '../styles/global.css';
 ---
 
 <html lang="en">
   <head>
     <BaseHead title="Calendar - Link Curator" />
-    <style>
+    <style is:global>
       .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 4px;
+        gap: 8px;
         margin-top: 1rem;
       }
       .calendar-day-header {
@@ -25,9 +26,11 @@ import '../styles/global.css';
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        padding: 0.4rem;
         border-radius: var(--radius);
         background: var(--color-surface);
-        transition: background 0.15s;
+        border: 1px solid var(--color-border);
+        transition: background 0.15s, border-color 0.15s;
         text-decoration: none;
         color: var(--color-text);
         font-size: 0.85rem;
@@ -35,12 +38,14 @@ import '../styles/global.css';
       }
       .calendar-day:hover {
         background: var(--color-surface-raised);
+        border-color: var(--color-text-secondary);
       }
       .calendar-day.empty {
         background: transparent;
+        border-color: transparent;
       }
       .calendar-day.has-entries {
-        border: 1px solid var(--color-primary);
+        border-color: var(--color-primary);
       }
       .calendar-day.today {
         font-weight: bold;
@@ -48,8 +53,12 @@ import '../styles/global.css';
       }
       .day-count {
         font-size: 0.65rem;
-        color: var(--color-text-muted);
+        color: var(--color-text-secondary);
         font-family: var(--font-mono);
+        margin-top: 0.2rem;
+        background: var(--color-tag-bg);
+        padding: 0.05rem 0.35rem;
+        border-radius: 3px;
       }
       .calendar-nav {
         display: flex;
@@ -73,6 +82,8 @@ import '../styles/global.css';
       <header class="app-header">
         <h1><a href="/">Link Curator</a></h1>
       </header>
+
+      <Nav />
 
       <div id="calendar-app">
         <div class="calendar-nav">
