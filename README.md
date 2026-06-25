@@ -210,12 +210,12 @@ public/
 
 ## Roadmap
 
-See the unified roadmap in the project vault for the full v0.3–v1.0 plan.
+See the unified roadmap in the project vault for the full v0.3 to v1.0 plan.
 
-**Next phases:**
-- **Phase 3:** Auto-export to vault on save, INDEX.md generation, entry validation
-- **Phase 4:** Hermes agent integration (auto-archive from chat), Telegram intake
-- **Phase 5:** HTML bookmark import from browser exports
+**Coming next:**
+- Auto-export to vault on save, INDEX.md generation, entry validation
+- Agent integration (auto-archive from chat), Telegram intake
+- HTML bookmark import from browser exports
 
 ## Contributing
 
@@ -223,13 +223,20 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
 
 ## Changelog
 
-### v0.3.0
+### v0.3.1
 
-*Phase 1 + Phase 2 dashboard features*
+- Added opt-in Obsidian auto-export on save via `LINK_CURATOR_AUTO_EXPORT=true`
+- Hardened vault export path handling against `../`, symlink, and nested symlink escapes
+- Added collection index endpoint (`/api/index-md`) returning a Markdown index of all saved links, newest-first
+- Added `getAllEntriesForIndex()` database query
+- Added export validation (`validateExportMarkdown`) that checks frontmatter, title, URL, createdAt, delimiter integrity, and warns on empty tags
+- 117 tests (up from 88 in v0.3.0)
+
+### v0.3.0
 
 - Added health check endpoint (`/api/health`)
 - Added stats endpoint (`/api/stats`) with tag frequency and content type distribution
@@ -242,17 +249,6 @@ MIT — see [LICENSE](LICENSE).
 - Expanded content types to include `paper` and `newsletter`
 - Added `getStats()`, `getGraphData()`, `getCalendarData()`, `getEntriesByDate()` database queries
 - 88 tests (up from 53 in v0.2.0)
-
-### v0.3.1
-
-*Phase 3 Markdown bridge*
-
-- Added opt-in Obsidian auto-export on save via `LINK_CURATOR_AUTO_EXPORT=true`
-- Hardened vault export path handling against `../`, symlink, and nested symlink escapes
-- Added collection index endpoint (`/api/index-md`) returning a Markdown index of all saved links, newest-first
-- Added `getAllEntriesForIndex()` database query
-- Added export validation (`validateExportMarkdown`) that checks frontmatter, title, URL, createdAt, delimiter integrity, and warns on empty tags
-- 117 tests (up from 88 in v0.3.0)
 
 ### v0.2.0
 
