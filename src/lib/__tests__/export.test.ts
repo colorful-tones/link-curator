@@ -61,6 +61,53 @@ describe('writeEntryToVault', () => {
     expect(fs.existsSync(path.join(vaultDir, 'Deep', 'Nested'))).toBe(true);
   });
 
+  it('rejects subdirectories that escape the vault path', () => {
+    const entry = makeEntry();
+    const result = writeEntryToVault(entry, vaultDir, '../outside');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('escapes vault path');
+    expect(fs.existsSync(path.join(tmpDir, 'outside'))).toBe(false);
+  });
+
+  it('allows in-vault subdirectories that start with dot-dot characters', () => {
+    const entry = makeEntry();
+    const result = writeEntryToVault(entry, vaultDir, '..foo');
+
+    expect(result.success).toBe(true);
+    expect(result.path).toContain('..foo');
+    expect(fs.existsSync(path.join(vaultDir, '..foo'))).toBe(true);
+  });
+
+  it('rejects symlinked subdirectories that resolve outside the vault path', () => {
+    const entry = makeEntry();
+    const outsideDir = path.join(tmpDir, 'outside');
+    const symlinkDir = path.join(vaultDir, 'LinkedOutside');
+    fs.mkdirSync(outsideDir, { recursive: true });
+    fs.symlinkSync(outsideDir, symlinkDir, 'dir');
+
+    const result = writeEntryToVault(entry, vaultDir, 'LinkedOutside');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('escapes vault path');
+    expect(fs.readdirSync(outsideDir)).toHaveLength(0);
+  });
+
+  it('rejects nested subdirectories beneath symlinks that resolve outside the vault path', () => {
+    const entry = makeEntry();
+    const outsideDir = path.join(tmpDir, 'outside');
+    const symlinkDir = path.join(vaultDir, 'LinkedOutside');
+    fs.mkdirSync(outsideDir, { recursive: true });
+    fs.symlinkSync(outsideDir, symlinkDir, 'dir');
+
+    const result = writeEntryToVault(entry, vaultDir, 'LinkedOutside/NewNested');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('escapes vault path');
+    expect(fs.existsSync(path.join(outsideDir, 'NewNested'))).toBe(false);
+    expect(fs.readdirSync(outsideDir)).toHaveLength(0);
+  });
+
   it('returns failure when vault path does not exist', () => {
     const entry = makeEntry();
     const result = writeEntryToVault(entry, '/nonexistent/path', 'Inbox');
