@@ -3,7 +3,31 @@ import { normalizeUrl } from '../../lib/url';
 import { extractLinkMetadata } from '../../lib/extract-link';
 import { enrichLink } from '../../lib/ai';
 import { createEntry, getEntryByUrl } from '../../lib/db';
+import { writeEntryToVault } from '../../lib/export';
 import type { ContentType, LinkEntry } from '../../lib/types';
+
+function autoExportEntry(entry: LinkEntry): void {
+  if (process.env.LINK_CURATOR_AUTO_EXPORT !== 'true') {
+    return;
+  }
+
+  const vaultPath = process.env.LINK_CURATOR_OBSIDIAN_VAULT;
+  if (!vaultPath) {
+    console.warn('Link Curator auto-export skipped: LINK_CURATOR_OBSIDIAN_VAULT is not set.');
+    return;
+  }
+
+  try {
+    const subdir = process.env.LINK_CURATOR_EXPORT_SUBDIR || 'Inbox';
+    const result = writeEntryToVault(entry, vaultPath, subdir);
+
+    if (!result.success) {
+      console.warn('Link Curator auto-export failed:', result.error);
+    }
+  } catch (err) {
+    console.warn('Link Curator auto-export failed:', (err as Error).message);
+  }
+}
 
 export const POST: APIRoute = async ({ request }) => {
   let body: { url?: string };
@@ -100,6 +124,7 @@ export const POST: APIRoute = async ({ request }) => {
   };
 
   createEntry(entry);
+  autoExportEntry(entry);
 
   return new Response(JSON.stringify(entry), {
     status: 201,

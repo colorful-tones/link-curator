@@ -78,11 +78,13 @@ The PWA manifest enables full-screen mode with no Safari chrome. See the full se
 To auto-write entries to an Obsidian vault, configure:
 
 ```sh
+LINK_CURATOR_AUTO_EXPORT=true
 LINK_CURATOR_OBSIDIAN_VAULT=/Users/you/AI/obsidian/Hermes
 LINK_CURATOR_EXPORT_SUBDIR=Inbox
 ```
 
 Entries save to `{VAULT}/{SUBDIR}/entry-title.md` with YAML frontmatter.
+Auto-export is off by default. Manual export from an entry page still only needs `LINK_CURATOR_OBSIDIAN_VAULT`; auto-export runs only when `LINK_CURATOR_AUTO_EXPORT=true` and a vault path is set. Link saving still succeeds if the vault write fails.
 
 ## Development
 

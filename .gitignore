@@ -29,5 +29,6 @@ data/
 .idea/
 
 # AI
+.ai
 .ai/
 AGENTS.md
