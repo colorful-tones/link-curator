@@ -20,9 +20,10 @@ Paste a link, save it locally, fetch useful page metadata, generate a short summ
 - Per-entry Markdown export with YAML frontmatter
 - Save entries directly to an Obsidian vault
 - Collection index endpoint (`/api/index-md`) returns a Markdown index of all saved links, newest-first
+- Export validation guards the Obsidian-facing Markdown format against silent corruption
 - PWA support for iPhone via Safari "Add to Home Screen"
 - Accessible anywhere via Tailscale (`http://damons-macbook-pro:4321`)
-- 106 tests covering URL validation, metadata extraction, AI fallback, export, index generation, and database operations
+- 117 tests covering URL validation, metadata extraction, AI fallback, export, export validation, index generation, and database operations
 
 ## Tech stack
 
@@ -91,7 +92,7 @@ Auto-export is off by default. Manual export from an entry page still only needs
 
 ```sh
 pnpm dev        # start at http://localhost:4321
-pnpm test       # run 106 tests
+pnpm test       # run 117 tests
 pnpm typecheck  # TypeScript typecheck
 pnpm build      # production build
 ```
@@ -148,6 +149,10 @@ Two tag buckets per entry:
 
 Each entry exports as Markdown from `/api/entries/:id/markdown` with YAML frontmatter (title, URL, canonical URL, site name, timestamps, content type, tags). The body includes the summary and source link.
 
+## Export validation
+
+`validateExportMarkdown` reads generated Markdown as a string and checks that the frontmatter opens and closes, that `title`, `url`, and `createdAt` are present and valid, and that no duplicate `---` separators hide inside the block. It returns errors for any of those failures and a warning when both `personalTags` and `publicTags` are empty or absent. A round-trip through `entryToMarkdown` passes with no issues. This guard catches future export regressions before they reach the Obsidian vault.
+
 ## Collection index
 
 `GET /api/index-md` returns a single Markdown document listing every saved link, newest-first. Each entry shows its title as a link, URL, canonical URL when available, content type, personal and public tags, added date, and summary. An empty collection returns a short "No entries yet" document instead of an empty response. The endpoint serves `text/markdown` and offers `INDEX.md` as a download filename.
@@ -171,6 +176,7 @@ src/
     extract-link.ts        # HTML metadata extraction
     markdown.ts            # Markdown/YAML frontmatter generation
     schema.ts              # SQLite schema
+    validate.ts            # Markdown export validator
     types.ts               # TypeScript types
     url.ts                 # URL validation
     __tests__/             # test files
@@ -245,7 +251,8 @@ MIT — see [LICENSE](LICENSE).
 - Hardened vault export path handling against `../`, symlink, and nested symlink escapes
 - Added collection index endpoint (`/api/index-md`) returning a Markdown index of all saved links, newest-first
 - Added `getAllEntriesForIndex()` database query
-- 106 tests (up from 88 in v0.3.0)
+- Added export validation (`validateExportMarkdown`) that checks frontmatter, title, URL, createdAt, delimiter integrity, and warns on empty tags
+- 117 tests (up from 88 in v0.3.0)
 
 ### v0.2.0
 
